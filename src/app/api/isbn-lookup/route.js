@@ -13,14 +13,16 @@ export async function GET(request) {
   let book = null;
   try {
     book = await lookupGoogleBooks(isbn);
-  } catch {
+  } catch (err) {
+    console.error("Google Books lookup failed:", err);
     book = null;
   }
 
   if (!book) {
     try {
       book = await lookupOpenLibrary(isbn);
-    } catch {
+    } catch (err) {
+      console.error("Open Library lookup failed:", err);
       book = null;
     }
   }
