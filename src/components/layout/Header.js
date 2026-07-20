@@ -15,9 +15,17 @@ export default async function Header() {
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           {user ? (
-            <Link href="/account" className="underline">
-              Mon compte
-            </Link>
+            <>
+              <Link href="/listings/new" className="underline">
+                Ajouter un livre
+              </Link>
+              <Link href="/account/listings" className="underline">
+                Mes annonces
+              </Link>
+              <Link href="/account" className="underline">
+                Mon compte
+              </Link>
+            </>
           ) : (
             <>
               <Link href="/login" className="underline">
