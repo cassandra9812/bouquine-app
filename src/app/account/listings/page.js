@@ -14,9 +14,19 @@ export default async function MyListingsPage() {
 
   const { data: listings } = await supabase
     .from("listings")
-    .select("id, title, price, condition, city, status, cover_url")
+    .select(
+      "id, title, price, condition, city, status, cover_url, listing_photos(storage_path, position)"
+    )
     .eq("seller_id", user.id)
     .order("created_at", { ascending: false });
+
+  function thumbnailFor(listing) {
+    const photos = listing.listing_photos ?? [];
+    if (photos.length === 0) return listing.cover_url;
+    const first = [...photos].sort((a, b) => a.position - b.position)[0];
+    return supabase.storage.from("listing-photos").getPublicUrl(first.storage_path).data
+      .publicUrl;
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-12">
@@ -34,15 +44,17 @@ export default async function MyListingsPage() {
       )}
 
       <div className="flex flex-col gap-3">
-        {listings?.map((listing) => (
+        {listings?.map((listing) => {
+          const thumbnail = thumbnailFor(listing);
+          return (
           <div
             key={listing.id}
             className="flex items-center gap-3 border rounded p-3"
           >
-            {listing.cover_url && (
+            {thumbnail && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={listing.cover_url}
+                src={thumbnail}
                 alt={listing.title}
                 className="w-10 h-14 object-cover border"
               />
@@ -65,7 +77,8 @@ export default async function MyListingsPage() {
               Modifier
             </Link>
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

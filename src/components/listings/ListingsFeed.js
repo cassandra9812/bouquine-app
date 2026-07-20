@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { CONDITIONS, PROVINCES } from "@/lib/pricing";
 
 export default function ListingsFeed() {
+  const supabase = useMemo(() => createClient(), []);
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,14 +19,13 @@ export default function ListingsFeed() {
   const [sort, setSort] = useState("recent");
 
   useEffect(() => {
-    const supabase = createClient();
     let cancelled = false;
 
     async function fetchListings() {
       setLoading(true);
       let query = supabase
         .from("listings")
-        .select("*, profiles(display_name)")
+        .select("*, profiles(display_name), listing_photos(storage_path, position)")
         .eq("status", "active");
 
       if (keyword.trim()) {
@@ -55,7 +55,15 @@ export default function ListingsFeed() {
     return () => {
       cancelled = true;
     };
-  }, [keyword, condition, language, province, priceMin, priceMax, sort]);
+  }, [supabase, keyword, condition, language, province, priceMin, priceMax, sort]);
+
+  function thumbnailFor(listing) {
+    const photos = listing.listing_photos ?? [];
+    if (photos.length === 0) return listing.cover_url;
+    const first = [...photos].sort((a, b) => a.position - b.position)[0];
+    return supabase.storage.from("listing-photos").getPublicUrl(first.storage_path).data
+      .publicUrl;
+  }
 
   function resetFilters() {
     setKeyword("");
@@ -153,16 +161,18 @@ export default function ListingsFeed() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {listings.map((listing) => (
+        {listings.map((listing) => {
+          const thumbnail = thumbnailFor(listing);
+          return (
           <Link
             key={listing.id}
             href={`/listings/${listing.id}`}
             className="border rounded p-3 flex gap-3 hover:shadow-sm"
           >
-            {listing.cover_url && (
+            {thumbnail && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={listing.cover_url}
+                src={thumbnail}
                 alt={listing.title}
                 className="w-14 h-20 object-cover border flex-shrink-0"
               />
@@ -176,7 +186,8 @@ export default function ListingsFeed() {
               <p className="font-medium mt-1">{Number(listing.price).toFixed(2)} $</p>
             </div>
           </Link>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
