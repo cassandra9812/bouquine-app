@@ -1,7 +1,10 @@
 export async function lookupGoogleBooks(isbn) {
-  const res = await fetch(
-    `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(isbn)}`
-  );
+  const params = new URLSearchParams({ q: `isbn:${isbn}` });
+  if (process.env.GOOGLE_BOOKS_API_KEY) {
+    params.set("key", process.env.GOOGLE_BOOKS_API_KEY);
+  }
+
+  const res = await fetch(`https://www.googleapis.com/books/v1/volumes?${params}`);
   if (!res.ok) return null;
 
   const data = await res.json();
