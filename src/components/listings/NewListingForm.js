@@ -80,6 +80,10 @@ export default function NewListingForm({ user, initialProfile }) {
       setSubmitError(`Le prix minimum est de ${MIN_PRICE.toFixed(2)} $.`);
       return;
     }
+    if (photos.length === 0) {
+      setSubmitError("Ajoute au moins une photo de ton exemplaire pour publier l'annonce.");
+      return;
+    }
 
     setSubmitting(true);
     const supabase = createClient();
@@ -332,9 +336,15 @@ export default function NewListingForm({ user, initialProfile }) {
           </div>
           <div className="col-span-2 flex flex-col gap-2">
             <label className="text-sm font-medium">
-              Photos de ton exemplaire (plusieurs possibles)
+              Photos de ton exemplaire (obligatoire, plusieurs possibles)
             </label>
-            <input type="file" accept="image/*" multiple onChange={handlePhotoChange} />
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              required={photos.length === 0}
+              onChange={handlePhotoChange}
+            />
             {photos.length > 0 && (
               <div className="flex gap-2 flex-wrap mt-2">
                 {photos.map((file, i) => (
