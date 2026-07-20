@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { lookupGoogleBooks } from "@/lib/books/googleBooks";
 import { lookupOpenLibrary } from "@/lib/books/openLibrary";
+import { lookupBnf } from "@/lib/books/bnf";
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -23,6 +24,15 @@ export async function GET(request) {
       book = await lookupOpenLibrary(isbn);
     } catch (err) {
       console.error("Open Library lookup failed:", err);
+      book = null;
+    }
+  }
+
+  if (!book) {
+    try {
+      book = await lookupBnf(isbn);
+    } catch (err) {
+      console.error("BNF lookup failed:", err);
       book = null;
     }
   }
