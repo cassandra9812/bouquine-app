@@ -18,6 +18,9 @@ export default function NewListingForm({ user, initialProfile }) {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const [book, setBook] = useState(null);
+  const [manualMode, setManualMode] = useState(false);
+  const [manualTitle, setManualTitle] = useState("");
+  const [manualAuthor, setManualAuthor] = useState("");
 
   const [condition, setCondition] = useState(CONDITIONS[1]);
   const [format, setFormat] = useState(FORMATS[1].value);
@@ -52,6 +55,27 @@ export default function NewListingForm({ user, initialProfile }) {
       return;
     }
     setBook(data);
+  }
+
+  function handleManualContinue(e) {
+    e.preventDefault();
+    if (!manualTitle.trim()) return;
+    setBook({
+      isbn: null,
+      title: manualTitle.trim(),
+      authors: manualAuthor.trim() || null,
+      description: null,
+      coverUrl: null,
+      language: null,
+      publisher: null,
+      source: "manual",
+    });
+  }
+
+  function toggleManualMode() {
+    setManualMode((prev) => !prev);
+    setSearchError(null);
+    setBook(null);
   }
 
   function handleFormatChange(value) {
@@ -154,24 +178,75 @@ export default function NewListingForm({ user, initialProfile }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <input
-          type="text"
-          inputMode="numeric"
-          placeholder="Entre un ISBN (ex. 9780439023528)"
-          value={isbn}
-          onChange={(e) => setIsbn(e.target.value)}
-          className="border rounded px-3 py-2 flex-1"
-        />
-        <button
-          type="submit"
-          disabled={searching || !isbn}
-          className="bg-black text-white rounded px-4 py-2 disabled:opacity-50"
-        >
-          {searching ? "Recherche..." : "Rechercher"}
-        </button>
-      </form>
-      {searchError && <p className="text-sm text-red-600">{searchError}</p>}
+      {!manualMode && (
+        <>
+          <form onSubmit={handleSearch} className="flex gap-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="Entre un ISBN (ex. 9780439023528)"
+              value={isbn}
+              onChange={(e) => setIsbn(e.target.value)}
+              className="border rounded px-3 py-2 flex-1"
+            />
+            <button
+              type="submit"
+              disabled={searching || !isbn}
+              className="bg-black text-white rounded px-4 py-2 disabled:opacity-50"
+            >
+              {searching ? "Recherche..." : "Rechercher"}
+            </button>
+          </form>
+          {searchError && <p className="text-sm text-red-600">{searchError}</p>}
+          <button
+            type="button"
+            onClick={toggleManualMode}
+            className="text-sm underline text-gray-600 self-start"
+          >
+            Pas de code-barres (ex. édition Illumicrate) ? Écrire le titre moi-même
+          </button>
+        </>
+      )}
+
+      {manualMode && !book && (
+        <form onSubmit={handleManualContinue} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Titre du livre</label>
+            <input
+              type="text"
+              value={manualTitle}
+              onChange={(e) => setManualTitle(e.target.value)}
+              placeholder="ex. Le Serment des Assassins (édition Illumicrate)"
+              className="border rounded px-3 py-2"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium">Auteur (optionnel)</label>
+            <input
+              type="text"
+              value={manualAuthor}
+              onChange={(e) => setManualAuthor(e.target.value)}
+              className="border rounded px-3 py-2"
+            />
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={!manualTitle.trim()}
+              className="bg-black text-white rounded px-4 py-2 disabled:opacity-50"
+            >
+              Continuer
+            </button>
+            <button
+              type="button"
+              onClick={toggleManualMode}
+              className="text-sm underline text-gray-600"
+            >
+              Revenir à la recherche par ISBN
+            </button>
+          </div>
+        </form>
+      )}
 
       {book && (
         <div className="border rounded p-4 flex gap-4">
