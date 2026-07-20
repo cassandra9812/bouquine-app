@@ -19,6 +19,11 @@ export default function NewListingForm({ user, initialProfile }) {
   const [searchError, setSearchError] = useState(null);
   const [book, setBook] = useState(null);
   const [manualMode, setManualMode] = useState(false);
+  const [manualQuery, setManualQuery] = useState("");
+  const [manualSearching, setManualSearching] = useState(false);
+  const [manualSearchError, setManualSearchError] = useState(null);
+  const [manualResults, setManualResults] = useState(null);
+  const [showFreeEntry, setShowFreeEntry] = useState(false);
   const [manualTitle, setManualTitle] = useState("");
   const [manualAuthor, setManualAuthor] = useState("");
 
@@ -57,6 +62,32 @@ export default function NewListingForm({ user, initialProfile }) {
     setBook(data);
   }
 
+  async function handleTitleSearch(e) {
+    e.preventDefault();
+    setManualSearchError(null);
+    setManualResults(null);
+    setManualSearching(true);
+
+    const res = await fetch(`/api/title-search?q=${encodeURIComponent(manualQuery)}`);
+    const data = await res.json();
+
+    setManualSearching(false);
+    if (!res.ok) {
+      setManualSearchError(data.error ?? "La recherche a échoué.");
+      return;
+    }
+    setManualResults(data.results ?? []);
+  }
+
+  function selectManualResult(result) {
+    setBook(result);
+  }
+
+  function openFreeEntry() {
+    setManualTitle(manualQuery);
+    setShowFreeEntry(true);
+  }
+
   function handleManualContinue(e) {
     e.preventDefault();
     if (!manualTitle.trim()) return;
@@ -76,6 +107,12 @@ export default function NewListingForm({ user, initialProfile }) {
     setManualMode((prev) => !prev);
     setSearchError(null);
     setBook(null);
+    setManualQuery("");
+    setManualResults(null);
+    setManualSearchError(null);
+    setShowFreeEntry(false);
+    setManualTitle("");
+    setManualAuthor("");
   }
 
   function handleFormatChange(value) {
@@ -208,7 +245,86 @@ export default function NewListingForm({ user, initialProfile }) {
         </>
       )}
 
-      {manualMode && !book && (
+      {manualMode && !book && !showFreeEntry && (
+        <div className="flex flex-col gap-3">
+          <form onSubmit={handleTitleSearch} className="flex gap-2">
+            <input
+              type="text"
+              value={manualQuery}
+              onChange={(e) => setManualQuery(e.target.value)}
+              placeholder="ex. Harry Potter à l'école des sorciers"
+              className="border rounded px-3 py-2 flex-1"
+            />
+            <button
+              type="submit"
+              disabled={manualSearching || !manualQuery.trim()}
+              className="bg-black text-white rounded px-4 py-2 disabled:opacity-50"
+            >
+              {manualSearching ? "Recherche..." : "Rechercher"}
+            </button>
+          </form>
+          {manualSearchError && (
+            <p className="text-sm text-red-600">{manualSearchError}</p>
+          )}
+
+          {manualResults && manualResults.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <p className="text-sm text-gray-600">
+                Sélectionne le livre que tu cherches :
+              </p>
+              {manualResults.map((result, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => selectManualResult(result)}
+                  className="border rounded p-3 flex gap-3 text-left hover:bg-gray-50"
+                >
+                  {result.coverUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={result.coverUrl}
+                      alt={result.title}
+                      className="w-12 h-16 object-cover border flex-shrink-0"
+                    />
+                  )}
+                  <div>
+                    <h4 className="font-medium text-sm">{result.title}</h4>
+                    <p className="text-xs text-gray-600">{result.authors}</p>
+                    {result.publisher && (
+                      <p className="text-xs text-gray-500">{result.publisher}</p>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {manualResults && manualResults.length === 0 && (
+            <p className="text-sm text-gray-600">
+              Aucun résultat pour cette recherche.
+            </p>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={openFreeEntry}
+              className="text-sm underline text-gray-600"
+            >
+              Je ne trouve pas mon édition — continuer avec ce titre exact
+            </button>
+            <button
+              type="button"
+              onClick={toggleManualMode}
+              className="text-sm underline text-gray-600"
+            >
+              Revenir à la recherche par ISBN
+            </button>
+          </div>
+        </div>
+      )}
+
+      {manualMode && !book && showFreeEntry && (
         <form onSubmit={handleManualContinue} className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
             <label className="text-sm font-medium">Titre du livre</label>
@@ -239,10 +355,10 @@ export default function NewListingForm({ user, initialProfile }) {
             </button>
             <button
               type="button"
-              onClick={toggleManualMode}
+              onClick={() => setShowFreeEntry(false)}
               className="text-sm underline text-gray-600"
             >
-              Revenir à la recherche par ISBN
+              Revenir à la recherche par titre
             </button>
           </div>
         </form>
