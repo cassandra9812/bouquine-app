@@ -22,6 +22,9 @@ export default async function Header() {
               <Link href="/account/listings" className="underline">
                 Mes annonces
               </Link>
+              <Link href="/negotiations" className="underline">
+                Mes négociations
+              </Link>
               <Link href="/account" className="underline">
                 Mon compte
               </Link>

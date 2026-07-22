@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import StartNegotiationButton from "@/components/negotiation/StartNegotiationButton";
 
 export default async function ListingDetailPage({ params }) {
   const { id } = await params;
@@ -89,6 +90,16 @@ export default async function ListingDetailPage({ params }) {
               <Link href={`/listings/${listing.id}/edit`} className="underline">
                 Modifier
               </Link>
+            </div>
+          )}
+
+          {!isOwner && listing.status === "active" && (
+            <div className="mt-4">
+              <StartNegotiationButton
+                listingId={listing.id}
+                sellerId={listing.seller_id}
+                user={user}
+              />
             </div>
           )}
         </div>
